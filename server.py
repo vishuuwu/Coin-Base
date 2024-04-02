@@ -1,5 +1,8 @@
 import socket
 import threading
+import pickle
+from player import Player
+
 
 SERVER = "192.168.29.15"
 PORT = 5555
@@ -16,16 +19,11 @@ except socket.error as e:
 # Listen for incoming connections
 s.listen(2)
 print("Waiting for connections. Server started.")
-pos = [(0, 0), (100, 100)]
 
 
-def read_pos(str):
-    str = str.split(",")
-    return (int(str[0]), int(str[1]))
+# pos = [(0, 0), (100, 100)]
 
-
-def make_pos(tup):
-    return str(tup[0]) + "," + str(tup[1])
+players = [Player(0, 0, 50, 50, (255, 0, 0)), Player(100, 100, 50, 50, (0, 0, 255))]
 
 
 def handle_client(conn, player):
@@ -36,32 +34,32 @@ def handle_client(conn, player):
         conn (socket.socket): The client socket object.
     """
     # Send connection confirmation message to the client
-    conn.send(str.encode(make_pos(pos[player])))
+    conn.send(pickle.dumps(players[player]))
 
     while True:
         try:
             # Receive data from the client
-            data = read_pos(conn.recv(2048).decode())
-            pos[player] = data
+            data = pickle.loads(conn.recv(2048))
+            players[player] = data
             if not data:
                 print("Disconnected.")
                 break
             else:
                 if player == 1:
-                    reply = pos[0]
+                    reply = players[0]
                 else:
-                    reply = pos[1]
+                    reply = players[1]
 
                 # print("Received:", reply)
                 # print("Sending:", reply)
                 # Send the received data back to the client
-                conn.sendall(str.encode(make_pos(reply)))
+                conn.sendall(pickle.dumps(reply))
         except Exception as e:
             print("Error:", str(e))
             break
 
     # Close the connection with the client
-    
+
     conn.close()
 
 
