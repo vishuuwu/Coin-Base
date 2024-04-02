@@ -1,4 +1,6 @@
 import pygame
+from network import Network
+
 
 # Constants
 WIDTH = 1000
@@ -9,14 +11,24 @@ FPS = 60
 PLAYER_WIDTH = 100
 PLAYER_HEIGHT = 100
 PLAYER_COLOR = (0, 0, 255)
+PLAYER_TWO_COLOR = (0, 255, 0)
 PLAYER_VELOCITY = 3
 
 
 class Player:
-    """Class to represent the player."""
+    """A class representing the player."""
 
     def __init__(self, x, y, width, height, color):
-        """Initialize player attributes."""
+        """
+        Initialize a Player object.
+
+        Args:
+            x (int): The x-coordinate of the player's top-left corner.
+            y (int): The y-coordinate of the player's top-left corner.
+            width (int): The width of the player.
+            height (int): The height of the player.
+            color (tuple): The RGB color tuple representing the player's color.
+        """
         self.x = x
         self.y = y
         self.width = width
@@ -26,7 +38,12 @@ class Player:
         self.vel = PLAYER_VELOCITY
 
     def draw(self, win):
-        """Draw the player on the window."""
+        """
+        Draw the player on the window.
+
+        Args:
+            win (pygame.Surface): The window surface to draw the player on.
+        """
         pygame.draw.rect(win, self.color, self.rect)
 
     def move(self):
@@ -40,13 +57,23 @@ class Player:
             self.y -= self.vel
         if keys[pygame.K_DOWN]:
             self.y += self.vel
+        self.update()
+
+    def update(self):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
 
-def redraw_window(win, player):
-    """Redraw the window with a white background and the player."""
+def redraw_window(win, player, player2):
+    """
+    Redraw the window with a white background and the player.
+
+    Args:
+        win (pygame.Surface): The window surface to draw on.
+        player (Player): The player object to draw.
+    """
     win.fill((255, 255, 255))
     player.draw(win)
+    player2.draw(win)
     pygame.display.update()
 
 
@@ -58,22 +85,40 @@ def handle_events():
     return True
 
 
+def read_pos(str):
+    str = str.split(",")
+    return (int(str[0]), int(str[1]))
+
+
+def make_pos(tup):
+    return str(tup[0]) + "," + str(tup[1])
+
+
 def main():
     """Main function to run the game."""
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Client")
 
-    player = Player(50, 50, PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_COLOR)
-    clock = pygame.time.Clock()
-
     running = True
+    n = Network()
+    startPos = read_pos(n.getPos())
+    player = Player(startPos[0], startPos[1], PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_COLOR)
+
+    # other player statPos
+    p2 = Player(startPos[0], startPos[1], PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_TWO_COLOR)
+
+    clock = pygame.time.Clock()
     while running:
         clock.tick(FPS)
+
+        p2pos = read_pos(n.send(make_pos((player.x, player.y))))
+        p2.x, p2.y = p2pos
+        p2.update()
         running = handle_events()
 
         player.move()
-        redraw_window(win, player)
+        redraw_window(win, player, p2)
 
     pygame.quit()
 
