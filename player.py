@@ -1,10 +1,12 @@
 import pygame
+from game_config import get_random_color
 PLAYER_VELOCITY = 3
+
 
 class Player:
     """A class representing the player."""
 
-    def __init__(self, x, y, width, height, color):
+    def __init__(self, x, y, width, height, char_color):
         """
         Initialize a Player object.
 
@@ -19,18 +21,12 @@ class Player:
         self.y = y
         self.width = width
         self.height = height
-        self.color = color
+        self.char = char_color
+        self.color = get_random_color()
         self.rect = pygame.Rect(x, y, width, height)
+
+        self.direction = "left"
         self.vel = PLAYER_VELOCITY
-
-    def draw(self, win):
-        """
-        Draw the player on the window.
-
-        Args:
-            win (pygame.Surface): The window surface to draw the player on.
-        """
-        pygame.draw.rect(win, self.color, self.rect)
 
     def move(self):
         """Move the player based on key inputs."""
@@ -47,4 +43,3 @@ class Player:
 
     def update(self):
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-

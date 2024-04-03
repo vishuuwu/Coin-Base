@@ -1,5 +1,6 @@
 import socket
 import pickle
+from game_config import get_wifi_ip, SERVER
 
 class Network:
     """
@@ -18,7 +19,9 @@ class Network:
         Initializes the Network object.
         """
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "192.168.29.15"
+        # self.server = "192.168.29.15"
+        # self.server = get_ip_address()
+        self.server = SERVER
         self.port = 5555
         self.addr = (self.server, self.port)
         self.player = self.connect()
@@ -56,6 +59,15 @@ class Network:
         except socket.error as e:
             print("Error:", e)
             return None
+
+    def disconnect(self):
+        """
+        Disconnects from the server.
+        """
+        try:
+            self.client.close()
+        except Exception as e:
+            print("Error:", e)
 
 
 # Example usage

@@ -1,10 +1,23 @@
 import socket
 import threading
+import uuid
 import pickle
+
 from player import Player
+from game_config import (
+    get_random_pos,
+    get_random_color,
+    get_random_character,
+    get_wifi_ip,
+    PLAYER_WIDTH,
+    PLAYER_HEIGHT,
+    SERVER,
+)
+
+# SERVER = "192.168.29.15"
+# SERVER = get_ip_address()
 
 
-SERVER = "192.168.29.15"
 PORT = 5555
 
 # Create a socket object
@@ -17,57 +30,52 @@ except socket.error as e:
     print("Error:", str(e))
 
 # Listen for incoming connections
-s.listen(2)
+s.listen()
 print("Waiting for connections. Server started.")
 
 
-# pos = [(0, 0), (100, 100)]
-
-players = [Player(0, 0, 50, 50, (255, 0, 0)), Player(100, 100, 50, 50, (0, 0, 255))]
+players = {}
 
 
-def handle_client(conn, player):
+def handle_client(conn, id):
     """
     Handle client connection.
-
     Args:
         conn (socket.socket): The client socket object.
     """
-    # Send connection confirmation message to the client
-    conn.send(pickle.dumps(players[player]))
+    # Send connected players details..
+    conn.send(pickle.dumps(players[id]))
 
     while True:
         try:
             # Receive data from the client
             data = pickle.loads(conn.recv(2048))
-            players[player] = data
+            players[id] = data
             if not data:
-                print("Disconnected.")
+                print("player id : ", id, " Disconnected.")
+
                 break
             else:
-                if player == 1:
-                    reply = players[0]
-                else:
-                    reply = players[1]
-
-                # print("Received:", reply)
-                # print("Sending:", reply)
-                # Send the received data back to the client
+                # sending oponents data to the player to draw them
+                reply = {p_id: d for p_id, d in players.items() if p_id != id}
                 conn.sendall(pickle.dumps(reply))
         except Exception as e:
             print("Error:", str(e))
             break
-
-    # Close the connection with the client
-
+    del players[id]
+    # print("on player diconnecting", len(players))
     conn.close()
 
 
-currentPlayer = 0
 while True:
-    # Accept incoming connection
     conn, addr = s.accept()
     print("Connected to:", addr)
     # Start a new thread to handle the client
-    threading.Thread(target=handle_client, args=(conn, currentPlayer)).start()
-    currentPlayer += 1
+
+    player_id = str(uuid.uuid4())
+    players[player_id] = Player(
+        *get_random_pos(), PLAYER_WIDTH, PLAYER_HEIGHT, get_random_character()
+    )
+    print(players[player_id])
+    # print("on player connecting", len(players))
+    threading.Thread(target=handle_client, args=(conn, player_id)).start()
