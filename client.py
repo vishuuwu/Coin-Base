@@ -1,7 +1,6 @@
 import pygame
 from network import Network
-# from player import Player
-from game_config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from game_config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS, COIN_RADIUS, COIN_COLOR
 from os import listdir
 from os.path import join, isfile
 
@@ -10,24 +9,32 @@ def flip_sprite(sprite):
     return pygame.transform.flip(sprite, True, False)
 
 def load_character_sprites(direction=False):
+    """
+    Load character sprites from the assets folder.
+
+    Args:
+        direction (bool): Whether to load sprites for both directions.
+
+    Returns:
+        dict: Dictionary containing character sprites.
+    """
     dir = "characters"
     path = join("assets", dir)
     images = [f for f in listdir(path) if isfile(join(path, f))]
 
-    all_character_sprites = {}
+    character_sprites = {}
 
     for image in images:
         sprite = pygame.image.load(join(path, image)).convert_alpha()
 
         if direction:
-            all_character_sprites[image.replace(".png", "") + "_right"] = sprite
-            all_character_sprites[image.replace(".png", "") + "_left"] = flip_sprite(sprite)
+            character_sprites[image.replace(".png", "") + "_right"] = sprite
+            character_sprites[image.replace(".png", "") + "_left"] = flip_sprite(sprite)
         else:
-            all_character_sprites[image.replace(".png", "")] = sprite
-    return all_character_sprites
+            character_sprites[image.replace(".png", "")] = sprite
+    return character_sprites
 
-
-#--------------------------------------------------------
+# --------------------------------------------------------
 """
 TypeError: cannot pickle 'pygame.surface.Surface' object` 
 
@@ -59,37 +66,49 @@ pickle cant serialize (or i am not able to serialize..) pygame.surface object
 
 #     pygame.display.update()
 
-#--------------------------------------------------------
-
-
-#--------------------------------------------------------
+# --------------------------------------------------------
 
 def draw(player, win):
     """
     Draw the player on the window.
 
-        Args:
-        win (pygame.Surface): The window surface to draw the player on.
+    Args:
+        player (Player): The player object to draw.
+        win (pygame.Surface): The window surface to draw on.
     """
     pygame.draw.rect(win, player.color, player.rect)
 
-def redraw_window(win, player, opponents):
+def draw_coin(coin, win):
     """
-    Redraw the window with a white background and the player.
+    Draw a coin on the window.
+
+    Args:
+        coin (tuple): The coin object containing position and radius information.
+                Format: (center_x, center_y, radius)
+        win (pygame.Surface): The window surface to draw on.
+    """
+    (center_x, center_y), multiplier = coin
+    pygame.draw.circle(win, COIN_COLOR, (center_x, center_y), COIN_RADIUS * multiplier)
+
+def redraw_window(player, opponents, coins, win):
+    """
+    Redraw the window with a white background and the players.
 
     Args:
         win (pygame.Surface): The window surface to draw on.
         player (Player): The player object to draw.
+        opponents (dict): Dictionary containing opponent players.
+        coins (dict): Dictionary containing coin positions and multipliers.
     """
     win.fill((255, 255, 255))
-    draw(player,win)
+    draw(player, win)
+    for coin_id, coin in coins.items():
+        draw_coin(coin, win)
     for opp_id, opp in opponents.items():
-        draw(opp,win)
+        draw(opp, win)
 
+    draw(player, win)
     pygame.display.update()
-
-
-#--------------------------------------------------------
 
 def handle_events():
     """Handle events such as quitting the game."""
@@ -102,29 +121,33 @@ def main():
     """Main function to run the game."""
     running = True
     n = Network()
-    player =n.getPlayer()
-    print(player)
-    print(player.char)
+    player = n.getPlayer()
+    print(player.get_player_details())
+    print(player.name)
     clock = pygame.time.Clock()
     while running:
         clock.tick(FPS)
 
-        opponents = n.send(player)
-        # print(len(opponents))
+        response = n.send(player)
+        multiplier = response["multiplier"]
+        if multiplier != 0:
+            player.update_score(multiplier)
+
+        opponents = response["opponents"]
+        coins = response["coins"]
+
         running = handle_events()
-        if running == False :
+        if not running:
             print("Disconnected")
             n.disconnect()
 
         player.move()
-        redraw_window(win, player, opponents)
+        redraw_window(player, opponents, coins, win)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     pygame.init()
     win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Client")
-    SPRITES = load_character_sprites(True)
     main()

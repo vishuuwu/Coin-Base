@@ -1,29 +1,31 @@
 import socket
 import pickle
-from game_config import get_wifi_ip, SERVER
+from game_config import SERVER, PORT
 
 class Network:
     """
-    A class to handle network communication.
+    A class to handle network communication with the server.
 
     Attributes:
         server (str): The IP address of the server.
         port (int): The port number for communication.
         addr (tuple): A tuple containing the server IP address and port number.
         client (socket.socket): The client socket object.
-        id (str): The unique identifier received upon connection.
+        player (str): The unique identifier received upon connection.
     """
 
-    def __init__(self):
+    def __init__(self, server=SERVER, port=PORT):
         """
-        Initializes the Network object.
+        Initializes the Network object with the server address and port.
+
+        Args:
+            server (str): The IP address of the server. Defaults to the value in game_config.
+            port (int): The port number for communication. Defaults to 5555.
         """
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.server = "192.168.29.15"
-        # self.server = get_ip_address()
-        self.server = SERVER
-        self.port = 5555
+        self.server = server
+        self.port = port
         self.addr = (self.server, self.port)
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.player = self.connect()
 
     def getPlayer(self):
@@ -40,7 +42,7 @@ class Network:
             self.client.connect(self.addr)
             return pickle.loads(self.client.recv(2048))
         except Exception as e:
-            print("Error:", e)
+            print("Error connecting to the server:", e)
             return None
 
     def send(self, data):
@@ -56,8 +58,8 @@ class Network:
         try:
             self.client.send(pickle.dumps(data))
             return pickle.loads(self.client.recv(2048))
-        except socket.error as e:
-            print("Error:", e)
+        except Exception as e:
+            print("Error sending data:", e)
             return None
 
     def disconnect(self):
@@ -67,10 +69,4 @@ class Network:
         try:
             self.client.close()
         except Exception as e:
-            print("Error:", e)
-
-
-# Example usage
-# if __name__ == "__main__":
-#     n = Network()
-#     print(n.send("hello"))
+            print("Error disconnecting from the server:", e)
