@@ -1,30 +1,33 @@
 import pygame
 from game_config import get_random_color
+
 PLAYER_VELOCITY = 3
 
-
 class Player:
-    """A class representing the player."""
+    """A class representing a player."""
 
-    def __init__(self, x, y, width, height, char_color):
+    def __init__(self, player_id, x, y, width, height, character_color):
         """
         Initialize a Player object.
 
         Args:
+            player_id (int): The unique identifier for the player.
             x (int): The x-coordinate of the player's top-left corner.
             y (int): The y-coordinate of the player's top-left corner.
             width (int): The width of the player.
             height (int): The height of the player.
-            color (tuple): The RGB color tuple representing the player's color.
+            character_color (tuple): The RGB color tuple representing the player's character.
         """
+        self.id = player_id
+        self.name = f"guest_{str(player_id)[:4]}"
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.char = char_color
+        self.score = 0
+        self.character = character_color
         self.color = get_random_color()
         self.rect = pygame.Rect(x, y, width, height)
-
         self.direction = "left"
         self.vel = PLAYER_VELOCITY
 
@@ -42,4 +45,35 @@ class Player:
         self.update()
 
     def update(self):
+        """Update the player's rectangle."""
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+
+    def update_score(self, multiplier=1):
+        """Update the player's score."""
+        self.score += 1 * multiplier
+        print(self.score)
+
+    def get_player_details(self):
+        """
+        Get details of the player as a dictionary.
+
+        Returns:
+            dict: A dictionary containing the player's details.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "score": self.score,
+            "navigation": {
+                "x": self.x,
+                "y": self.y,
+                "direction": self.direction,
+                "vel": self.vel,
+            },
+            "details": {
+                "width": self.width,
+                "height": self.height,
+                "character": self.character,
+                "color": self.color,
+            },
+        }
