@@ -8,8 +8,11 @@ SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
 SCREEN_COLOR = (253, 252, 238)
 
+WINNING_POINTS = 5
+
 ACCENT_PINK = (255, 144, 232)
-ACCENT_YELLLOW = (255, 199, 15)
+# ACCENT_PINK = (0, 144, 0)
+ACCENT_YELLOW = (255, 199, 15)
 
 HEADER_HEIGHT = 54
 FOOTER_HEIGHT = 38
@@ -28,7 +31,7 @@ def get_coin_multiplyer():
     return 1 + random.randint(0,7)/10
 
 def generate_coin():
-    coin_pos = get_random_pos(14)
+    coin_pos = get_random_pos(20)
     multiplyer = get_coin_multiplyer()
     return (coin_pos, multiplyer)
 
