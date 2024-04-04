@@ -12,53 +12,54 @@ from game_config import (
     PLAYER_WIDTH,
     PLAYER_HEIGHT,
     COIN_RADIUS,
+    MAX_COINS,
+    MIN_GENERATE_INTERVAL,
+    MAX_GENERATE_INTERVAL,
     SERVER,
     PORT,
     BUFFER_SIZE,
-    WINNING_POINTS
-    
+    WINNING_POINTS,
 )
 
-# Constants
-MAX_COINS = 5
-MIN_GENERATE_INTERVAL = 1
-MAX_GENERATE_INTERVAL = 5
-
-
 # Global variables
-WINNER_FOUND = False 
+WINNER_FOUND = False
 WINNER_NAME = None
-COINS = {}
+COINS = []
 PLAYERS = {}
 coin_lock = threading.Lock()
+
 
 def check_for_winner():
     """
     Check if any player has reached the winning score.
     If a winner is found, set the global variable WINNER_FOUND to True.
     """
-    global WINNER_FOUND
-    global WINNER_NAME
+    global WINNER_FOUND, WINNER_NAME
     for player_id, player in PLAYERS.items():
         if player.score >= WINNING_POINTS:
-            print(f"Player {player.name} has reached the winning score!")
             WINNER_FOUND = True
             WINNER_NAME = player.name
             return
-
     WINNER_FOUND = False
 
+
 def check_winner_thread():
+    """Continuously check for a winner in a separate thread."""
     while not WINNER_FOUND:
-        time.sleep(1)  # Adjust the interval as needed
+        time.sleep(1)
         check_for_winner()
 
-# Start the winner checking thread
-winner_thread = threading.Thread(target=check_winner_thread)
-winner_thread.start()
 
-# You can call this function periodically from your main loop or any other suitable place
-# to check for a winner.
+def generate_coins():
+    """Generate coins at random time intervals."""
+    global COINS
+    while not WINNER_FOUND:
+        if len(COINS) > MAX_COINS:
+            continue
+
+        time.sleep(random.randint(MIN_GENERATE_INTERVAL, MAX_GENERATE_INTERVAL))
+        coin = generate_coin()  # Generate a new coin
+        COINS.append(coin)  # Add the coin to the list
 
 
 def grab_coin(player):
@@ -79,27 +80,33 @@ def grab_coin(player):
     coin_lock.acquire()
 
     try:
-        # Iterate over coins to check if the player overlaps with any of them
-        for coin_id, (coin_pos, coin_multiplier) in COINS.items():
+        coins_to_remove = []  # Store indices of coins to be removed
+        for index, (coin_pos, coin_multiplier) in enumerate(COINS):
             coin_center = coin_pos
             coin_radius = COIN_RADIUS * coin_multiplier
 
-            # Calculate the distance between the centers of the player and the coin
-            distance = (
-                (coin_center[0] - player_center[0]) ** 2
-                + (coin_center[1] - player_center[1]) ** 2
-            ) ** 0.5
+            # Calculate the squared distance between the player and the coin
+            dx = coin_center[0] - player_center[0]
+            dy = coin_center[1] - player_center[1]
+            distance_squared = dx * dx + dy * dy
 
-            # Check if the distance is less than the sum of the player's radius and coin's radius
-            if distance <= (player.rect.width / 2 + coin_radius):
+            # Calculate the squared sum of radii
+            sum_of_radii_squared = (player.rect.width / 2 + coin_radius) ** 2
+
+            # Check if the squared distance is less than or equal to the squared sum of radii
+            if distance_squared <= sum_of_radii_squared:
                 multiplier = coin_multiplier
-                del COINS[coin_id]  # Remove the grabbed coin from COINS
-                break  # No need to check further if a coin is grabbed
+                coins_to_remove.append(index)  # Add index of coin to removal list
+
+        # Remove grabbed coins from COINS (in reverse order to avoid index shifting)
+        for index in reversed(coins_to_remove):
+            del COINS[index]
     finally:
         # Release the lock
         coin_lock.release()
 
     return multiplier
+
 
 def handle_client(conn, player_id):
     """
@@ -120,7 +127,7 @@ def handle_client(conn, player_id):
             if not data:
                 print("Player disconnected:", player_id)
                 break
-            
+
             try:
                 received_data = pickle.loads(data)
                 PLAYERS[player_id] = received_data
@@ -128,10 +135,11 @@ def handle_client(conn, player_id):
                 multiplier = grab_coin(PLAYERS[player_id])
 
                 # Send opponents' data to the player
-                opponents = {p_id: d for p_id, d in PLAYERS.items() if p_id != player_id}
-                # print("hi", WINNER_NAME)
+                opponents = {
+                    p_id: d for p_id, d in PLAYERS.items() if p_id != player_id
+                }
                 reply = {
-                    "winner" : WINNER_NAME,
+                    "winner": WINNER_NAME,
                     "opponents": opponents,
                     "coins": COINS,
                     "multiplier": multiplier,
@@ -150,18 +158,6 @@ def handle_client(conn, player_id):
         conn.close()
 
 
-def generate_coins():
-    """Generate coins at random time intervals."""
-    global COINS
-    while not WINNER_FOUND:
-        if len(COINS) > MAX_COINS:
-            continue
-
-        time.sleep(random.randint(MIN_GENERATE_INTERVAL, MAX_GENERATE_INTERVAL))
-        coin_id = str(uuid.uuid4())
-        COINS[coin_id] = generate_coin()
-    COINS = {}
-
 def main():
     """Main function to run the server."""
     # Create a socket object
@@ -175,8 +171,9 @@ def main():
         print("Error:", str(e))
         return
 
+    # Start the winner checking thread
+    threading.Thread(target=check_winner_thread).start()
     # Start the coin generation thread
-    threading.Thread(target=check_winner_thread)
     threading.Thread(target=generate_coins).start()
 
     while True:
@@ -196,6 +193,6 @@ def main():
         )
         threading.Thread(target=handle_client, args=(conn, player_id)).start()
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     main()
