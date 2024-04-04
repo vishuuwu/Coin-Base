@@ -6,6 +6,16 @@ import re
 # Constants
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
+SCREEN_COLOR = (253, 252, 238)
+
+ACCENT_PINK = (255, 144, 232)
+ACCENT_YELLLOW = (255, 199, 15)
+
+HEADER_HEIGHT = 54
+FOOTER_HEIGHT = 38
+SCORECARD_HEIGHT = 28
+SCORECARD_WIDTH = int( SCREEN_WIDTH / 6)
+
 FPS = 60
 GUTTER = 50
 CHARACTER_COLORS = ["blue", "green", "pink", "purple", "red", "yellow"]
@@ -18,12 +28,18 @@ def get_coin_multiplyer():
     return 1 + random.randint(0,7)/10
 
 def generate_coin():
-    coin_pos = get_random_pos()
+    coin_pos = get_random_pos(14)
     multiplyer = get_coin_multiplyer()
     return (coin_pos, multiplyer)
 
 COIN_RADIUS = 16
 COIN_COLOR = (255, 215, 0)
+
+PLAYER_LIMIT_LEFT = SCORECARD_WIDTH
+PLAYER_LIMIT_RIGHT = SCREEN_WIDTH
+
+PLAYER_LIMIT_TOP = HEADER_HEIGHT
+PLAYER_LIMIT_DOWN = SCREEN_HEIGHT - FOOTER_HEIGHT
 
 
 def get_random_color():
@@ -34,9 +50,13 @@ def get_random_character():
     """Choose random character color."""
     return random.choice(CHARACTER_COLORS)
 
-def get_random_pos():
+def get_random_pos(gutter=GUTTER):
     """Generate random position within screen bounds."""
-    return (random.randint(GUTTER, SCREEN_WIDTH - GUTTER), random.randint(GUTTER, SCREEN_HEIGHT - GUTTER))
+    gutter = int(gutter)  # Ensure gutter is an integer
+    return (
+        random.randint(SCORECARD_WIDTH + gutter, SCREEN_WIDTH - gutter),
+        random.randint(HEADER_HEIGHT + gutter, SCREEN_HEIGHT - FOOTER_HEIGHT - gutter),
+    )
 
 
 def get_lan_ip():
