@@ -14,7 +14,8 @@ from game_config import (
     COIN_RADIUS,
     SERVER,
     PORT,
-    BUFFER_SIZE
+    BUFFER_SIZE,
+    WINNING_POINTS
     
 )
 
@@ -23,10 +24,41 @@ MAX_COINS = 5
 MIN_GENERATE_INTERVAL = 1
 MAX_GENERATE_INTERVAL = 5
 
+
 # Global variables
+WINNER_FOUND = False 
+WINNER_NAME = None
 COINS = {}
 PLAYERS = {}
 coin_lock = threading.Lock()
+
+def check_for_winner():
+    """
+    Check if any player has reached the winning score.
+    If a winner is found, set the global variable WINNER_FOUND to True.
+    """
+    global WINNER_FOUND
+    global WINNER_NAME
+    for player_id, player in PLAYERS.items():
+        if player.score >= WINNING_POINTS:
+            print(f"Player {player.name} has reached the winning score!")
+            WINNER_FOUND = True
+            WINNER_NAME = player.name
+            return
+
+    WINNER_FOUND = False
+
+def check_winner_thread():
+    while not WINNER_FOUND:
+        time.sleep(1)  # Adjust the interval as needed
+        check_for_winner()
+
+# Start the winner checking thread
+winner_thread = threading.Thread(target=check_winner_thread)
+winner_thread.start()
+
+# You can call this function periodically from your main loop or any other suitable place
+# to check for a winner.
 
 
 def grab_coin(player):
@@ -68,6 +100,7 @@ def grab_coin(player):
         coin_lock.release()
 
     return multiplier
+
 def handle_client(conn, player_id):
     """
     Handle client connection.
@@ -76,6 +109,7 @@ def handle_client(conn, player_id):
         conn (socket.socket): The client socket object.
         player_id (str): The unique identifier for the player.
     """
+    global WINNER_NAME
     try:
         # Send connected player's details
         conn.send(pickle.dumps(PLAYERS[player_id]))
@@ -95,7 +129,9 @@ def handle_client(conn, player_id):
 
                 # Send opponents' data to the player
                 opponents = {p_id: d for p_id, d in PLAYERS.items() if p_id != player_id}
+                # print("hi", WINNER_NAME)
                 reply = {
+                    "winner" : WINNER_NAME,
                     "opponents": opponents,
                     "coins": COINS,
                     "multiplier": multiplier,
@@ -106,19 +142,25 @@ def handle_client(conn, player_id):
     except Exception as e:
         print("Error:", str(e))
     finally:
+        # Remove the disconnected player from opponents dictionary
+        if player_id in opponents:
+            del opponents[player_id]
+
         del PLAYERS[player_id]
         conn.close()
 
 
 def generate_coins():
     """Generate coins at random time intervals."""
-    while True:
+    global COINS
+    while not WINNER_FOUND:
         if len(COINS) > MAX_COINS:
             continue
 
         time.sleep(random.randint(MIN_GENERATE_INTERVAL, MAX_GENERATE_INTERVAL))
         coin_id = str(uuid.uuid4())
         COINS[coin_id] = generate_coin()
+    COINS = {}
 
 def main():
     """Main function to run the server."""
@@ -134,6 +176,7 @@ def main():
         return
 
     # Start the coin generation thread
+    threading.Thread(target=check_winner_thread)
     threading.Thread(target=generate_coins).start()
 
     while True:
@@ -154,4 +197,5 @@ def main():
         threading.Thread(target=handle_client, args=(conn, player_id)).start()
 
 if __name__ == "__main__":
+
     main()

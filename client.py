@@ -1,3 +1,4 @@
+import time
 import pygame
 from network import Network
 from game_config import (
@@ -8,88 +9,23 @@ from game_config import (
     COIN_COLOR,
     SCREEN_COLOR,
     ACCENT_PINK,
-    ACCENT_YELLLOW,
+    ACCENT_YELLOW,
     HEADER_HEIGHT,
     FOOTER_HEIGHT,
     SCORECARD_HEIGHT,
-    SCORECARD_WIDTH
-
+    SCORECARD_WIDTH,
 )
 from os import listdir
 from os.path import join, isfile
 
 
+DRAW_GUI = True
+
 
 footer_credits = ["ASHISH KUMAR", "VINAY PRAKASH", "VISHAL KASHYAP"]
 
 
-def flip_sprite(sprite):
-    return pygame.transform.flip(sprite, True, False)
-
-
-def load_character_sprites(direction=False):
-    """
-    Load character sprites from the assets folder.
-
-    Args:
-        direction (bool): Whether to load sprites for both directions.
-
-    Returns:
-        dict: Dictionary containing character sprites.
-    """
-    dir = "characters"
-    path = join("assets", dir)
-    images = [f for f in listdir(path) if isfile(join(path, f))]
-
-    character_sprites = {}
-
-    for image in images:
-        sprite = pygame.image.load(join(path, image)).convert_alpha()
-
-        if direction:
-            character_sprites[image.replace(".png", "") + "_right"] = sprite
-            character_sprites[image.replace(".png", "") + "_left"] = flip_sprite(sprite)
-        else:
-            character_sprites[image.replace(".png", "")] = sprite
-    return character_sprites
-
-
-# --------------------------------------------------------
-"""
-TypeError: cannot pickle 'pygame.surface.Surface' object` 
-
-pickle cant serialize (or i am not able to serialize..) pygame.surface object
-"""
-
-# def draw(player, win, SPRITES):
-#     """
-#         Draw the player on the window.
-
-#         Args:
-#             win (pygame.Surface): The window surface to draw the player on.
-#     """
-#     player.sprite = SPRITES[player.char + "_" + player.direction]
-#     win.blit(player.sprite, (player.x, player.y))
-
-# def redraw_window(win, player, opponents):
-#     """
-#     Redraw the window with a white background and the player.
-
-#     Args:
-#         win (pygame.Surface): The window surface to draw on.
-#         player (Player): The player object to draw.
-#     """
-#     win.fill((255, 255, 255))
-#     draw(player,win, SPRITES)
-#     for opp_id, opp in opponents.items():
-#         draw(opp,win, SPRITES)
-
-#     pygame.display.update()
-
-# --------------------------------------------------------
-
-
-def draw(player, win):
+def draw_character(player, win):
     """
     Draw the player on the window.
 
@@ -97,7 +33,12 @@ def draw(player, win):
         player (Player): The player object to draw.
         win (pygame.Surface): The window surface to draw on.
     """
-    pygame.draw.rect(win, player.color, player.rect)
+    draw_rectangle(
+        (player.width, player.height),
+        player.color,
+        (player.x, player.y),
+        win,
+    )
 
 
 def draw_coin(coin, win):
@@ -159,6 +100,7 @@ def draw_rectangle(
     v_align="top",
     border_width=0,
     border_color=(0, 0, 0),
+    draw=DRAW_GUI,
 ):
     """
     Draw a rectangle on the window with support for horizontal and vertical alignment.
@@ -173,6 +115,9 @@ def draw_rectangle(
         border_width (int): The width of the rectangle border (default is 0, no border).
         border_color (tuple): The color of the rectangle border (optional, default is None).
     """
+    if not draw:
+        return
+
     rect = pygame.Rect(0, 0, *size)
     rect = align_shape(rect, position, h_align, v_align)
 
@@ -286,7 +231,6 @@ def draw_footer_item(text, rect_color, text_color, font_size, font, position, wi
     )
 
 
-
 def draw_background(win):
 
     win.fill(SCREEN_COLOR)
@@ -348,7 +292,7 @@ def draw_background(win):
     for i, credit in enumerate(footer_credits):
         draw_footer_item(
             text=credit,
-            rect_color=ACCENT_PINK if i % 2 == 0 else ACCENT_YELLLOW,
+            rect_color=ACCENT_PINK if i % 2 == 0 else ACCENT_YELLOW,
             text_color=(0, 0, 0),
             font_size=14,
             font="MabryPro-Regular",
@@ -361,9 +305,84 @@ def draw_background(win):
         )
 
 
+def draw_scoreboard_item(
+    name, score, rect_color, text_color, font_size, font, position, win
+):
+    # Draw background rectangle
+    draw_rectangle(
+        (SCORECARD_WIDTH, SCORECARD_HEIGHT),
+        rect_color,
+        position,
+        win,
+        h_align="left",
+        v_align="top",
+        border_width=1,
+        border_color=(0, 0, 0),
+    )
+
+    # Calculate the adjusted position for the text
+    text_position = (
+        position[0] + SCORECARD_HEIGHT / 2,
+        position[1] + SCORECARD_HEIGHT / 4,
+    )
+
+    # Draw name and score
+    draw_text(
+        name,
+        font_size,
+        text_color,
+        text_position,
+        win,
+        font=font,
+        h_align="left",
+    )
+    draw_text(
+        str(score),  # Convert score to string before passing to draw_text
+        font_size,
+        text_color,
+        (
+            position[0] + SCORECARD_WIDTH - SCORECARD_HEIGHT / 2,
+            position[1] + SCORECARD_HEIGHT / 4,
+        ),  # Adjusted position for the score
+        win,
+        font=font,
+        h_align="right",
+    )
+
+
 def draw_scoreboard(player, opponents, win):
-    for opp_id, opp in opponents.items():
-        continue
+    draw_rectangle(
+        (SCORECARD_WIDTH, SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2),
+        SCREEN_COLOR,
+        (0, HEADER_HEIGHT + 1),
+        win,
+        h_align="left",
+        v_align="top",
+        border_width=0,
+        border_color=(0, 0, 0),
+    )
+    # Combine player and opponents' scores and sort them by score
+    all_scores = [(player.name, player.score)] + [
+        (opp.name, opp.score) for opp in opponents.values()
+    ]
+    all_scores.sort(key=lambda x: x[1], reverse=True)
+
+    # Draw scoreboard items for each player and opponent
+    for i, (name, score) in enumerate(all_scores):
+        rect_color = ACCENT_YELLOW if name == player.name else ACCENT_PINK
+        draw_scoreboard_item(
+            name=name,
+            score=str(round(score, 2)),
+            rect_color=rect_color,
+            text_color=(0, 0, 0),
+            font_size=14,
+            font="MabryPro-Regular",
+            position=(
+                0,
+                HEADER_HEIGHT + i * (SCORECARD_HEIGHT),
+            ),
+            win=win,
+        )
 
 
 def redraw_window(player, opponents, coins, win):
@@ -376,15 +395,27 @@ def redraw_window(player, opponents, coins, win):
         opponents (dict): Dictionary containing opponent players.
         coins (dict): Dictionary containing coin positions and multipliers.
     """
-    
-    draw_background(win)
-    draw(player, win)
+
+    draw_rectangle(
+        (
+            SCREEN_WIDTH - SCORECARD_WIDTH - 2,
+            SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2,
+        ),
+        SCREEN_COLOR,
+        (SCORECARD_WIDTH + 1, HEADER_HEIGHT + 1),
+        win,
+        h_align="left",
+        v_align="top",
+        border_width=0,
+        border_color=(0, 0, 0),
+    )
+    draw_scoreboard(player, opponents, win)
     for coin_id, coin in coins.items():
         draw_coin(coin, win)
     for opp_id, opp in opponents.items():
-        draw(opp, win)
+        draw_character(opp, win)
 
-    draw(player, win)
+    draw_character(player, win)
 
     pygame.display.update()
 
@@ -412,10 +443,15 @@ def main():
         multiplier = response.get("multiplier", 0)
         if multiplier != 0:
             player.update_score(multiplier)
-
         opponents = response["opponents"]
-        coins = response["coins"]
+        winner = response["winner"]
+        # print("hi", winner)
+        if winner:
+            coins = {}
+            break
 
+        else:
+            coins = response["coins"]
         running = handle_events()
         if not running:
             print("Disconnected")
@@ -424,6 +460,36 @@ def main():
         player.move()
         redraw_window(player, opponents, coins, win)
 
+    # Draw the rectangle and winner text
+    draw_rectangle(
+        (
+            SCREEN_WIDTH - SCORECARD_WIDTH - 2,
+            SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2,
+        ),
+        ACCENT_YELLOW if winner == player.name else ACCENT_PINK,
+        (SCORECARD_WIDTH + 1, HEADER_HEIGHT + 1),
+        win,
+        h_align="left",
+        v_align="top",
+        border_width=0,
+        border_color=(0, 0, 0),
+    )
+
+    if winner:
+        draw_text(
+            "Player " + winner + " WON!!!",
+            14,
+            (0, 0, 0),
+            (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
+            win,
+            font="MabryPro-Regular",
+            h_align="center",
+            v_align="center",
+        )
+        pygame.display.update()
+
+    time.sleep(5)  # Add a 5-second delay for visibility
+
     pygame.quit()
 
 
@@ -431,5 +497,5 @@ if __name__ == "__main__":
     pygame.init()
     win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Client")
-    # draw_background(win) optimise this shit 
+    draw_background(win)  # optimise this shit
     main()

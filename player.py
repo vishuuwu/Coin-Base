@@ -1,7 +1,14 @@
 import pygame
-from game_config import get_random_color, PLAYER_LIMIT_LEFT,PLAYER_LIMIT_RIGHT, PLAYER_LIMIT_DOWN,PLAYER_LIMIT_TOP
+from game_config import (
+    get_random_color,
+    PLAYER_LIMIT_LEFT,
+    PLAYER_LIMIT_RIGHT,
+    PLAYER_LIMIT_DOWN,
+    PLAYER_LIMIT_TOP,
+)
 
 PLAYER_VELOCITY = 5
+
 
 class Player:
     """A class representing a player."""
@@ -34,13 +41,13 @@ class Player:
     def move(self):
         """Move the player based on key inputs."""
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and self.x > PLAYER_LIMIT_LEFT + 2:
+        if keys[pygame.K_LEFT] and self.x > (PLAYER_LIMIT_LEFT + 2):
             self.x -= self.vel
-        if keys[pygame.K_RIGHT] and self.x < PLAYER_LIMIT_RIGHT - self.height :
+        if keys[pygame.K_RIGHT] and self.x < (PLAYER_LIMIT_RIGHT - self.height -2):
             self.x += self.vel
-        if keys[pygame.K_UP] and self.y > PLAYER_LIMIT_TOP + 2 :
+        if keys[pygame.K_UP] and self.y > (PLAYER_LIMIT_TOP + 2):
             self.y -= self.vel
-        if keys[pygame.K_DOWN] and self.y < PLAYER_LIMIT_DOWN - self.height -2:
+        if keys[pygame.K_DOWN] and self.y < (PLAYER_LIMIT_DOWN - self.height - 2):
             self.y += self.vel
         self.update()
 
@@ -51,7 +58,7 @@ class Player:
     def update_score(self, multiplier=1):
         """Update the player's score."""
         self.score += 1 * multiplier
-        print(self.score)
+        # print(self.score)
 
     def get_player_details(self):
         """
