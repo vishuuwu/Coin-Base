@@ -19,7 +19,7 @@ from game_config import (
 )
 
 # Constants
-MAX_COINS = 20
+MAX_COINS = 5
 MIN_GENERATE_INTERVAL = 1
 MAX_GENERATE_INTERVAL = 5
 
@@ -68,7 +68,6 @@ def grab_coin(player):
         coin_lock.release()
 
     return multiplier
-
 def handle_client(conn, player_id):
     """
     Handle client connection.
@@ -83,36 +82,40 @@ def handle_client(conn, player_id):
 
         while True:
             # Receive data from the client
-            data = pickle.loads(conn.recv(BUFFER_SIZE))
-            PLAYERS[player_id] = data
-
-            multiplier = grab_coin(PLAYERS[player_id])
-
+            data = conn.recv(BUFFER_SIZE)
             if not data:
                 print("Player disconnected:", player_id)
                 break
-            else:
+            
+            try:
+                received_data = pickle.loads(data)
+                PLAYERS[player_id] = received_data
+
+                multiplier = grab_coin(PLAYERS[player_id])
+
                 # Send opponents' data to the player
-                opponents = {
-                    p_id: d for p_id, d in PLAYERS.items() if p_id != player_id
-                }
+                opponents = {p_id: d for p_id, d in PLAYERS.items() if p_id != player_id}
                 reply = {
                     "opponents": opponents,
                     "coins": COINS,
                     "multiplier": multiplier,
                 }
                 conn.sendall(pickle.dumps(reply))
+            except pickle.UnpicklingError:
+                print("Error: Invalid pickle data received")
     except Exception as e:
         print("Error:", str(e))
     finally:
         del PLAYERS[player_id]
         conn.close()
 
+
 def generate_coins():
     """Generate coins at random time intervals."""
     while True:
         if len(COINS) > MAX_COINS:
-            pass
+            continue
+
         time.sleep(random.randint(MIN_GENERATE_INTERVAL, MAX_GENERATE_INTERVAL))
         coin_id = str(uuid.uuid4())
         COINS[coin_id] = generate_coin()

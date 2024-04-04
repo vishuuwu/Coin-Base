@@ -1,7 +1,7 @@
 import pygame
-from game_config import get_random_color
+from game_config import get_random_color, PLAYER_LIMIT_LEFT,PLAYER_LIMIT_RIGHT, PLAYER_LIMIT_DOWN,PLAYER_LIMIT_TOP
 
-PLAYER_VELOCITY = 3
+PLAYER_VELOCITY = 5
 
 class Player:
     """A class representing a player."""
@@ -34,13 +34,13 @@ class Player:
     def move(self):
         """Move the player based on key inputs."""
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] and self.x > PLAYER_LIMIT_LEFT + 2:
             self.x -= self.vel
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] and self.x < PLAYER_LIMIT_RIGHT - self.height :
             self.x += self.vel
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] and self.y > PLAYER_LIMIT_TOP + 2 :
             self.y -= self.vel
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] and self.y < PLAYER_LIMIT_DOWN - self.height -2:
             self.y += self.vel
         self.update()
 
