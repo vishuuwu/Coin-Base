@@ -1,14 +1,7 @@
 from os import listdir
 import pygame
 from os.path import join, isfile
-
-from game_config import (
-    COIN_COLOR,
-    COIN_RADIUS,
-)
-
-
-footer_credits = ["VISHAL", "KASHYAP"]
+from game_config import PRIMARY_FONT, SECONDARY_FONT, TERTIARY_COLOR
 
 
 def flip_sprite(sprite):
@@ -122,7 +115,7 @@ def draw_rectangle(
     h_align="left",
     v_align="top",
     border_width=0,
-    border_color=(0, 0, 0),
+    border_color=TERTIARY_COLOR,
     draw=True,
 ):
     """
@@ -167,35 +160,6 @@ def draw_rectangle(
         pygame.draw.rect(win, color, rect)
 
 
-def draw_character(player, win):
-    """
-    Draw the player on the window.
-
-    Args:
-        player (Player): The player object to draw.
-        win (pygame.Surface): The window surface to draw on.
-    """
-    draw_rectangle(
-        (player.width, player.height),
-        player.color,
-        (player.x, player.y),
-        win,
-    )
-
-
-def draw_coin(coin, win):
-    """
-    Draw a coin on the window.
-
-    Args:
-        coin (tuple): The coin object containing position and multiplier information.
-                Format: ((center_x, center_y), multiplier)
-        win (pygame.Surface): The window surface to draw on.
-    """
-    (center_x, center_y), multiplier = coin
-    pygame.draw.circle(win, COIN_COLOR, (center_x, center_y), COIN_RADIUS * multiplier)
-
-
 def load_font(font_name, font_size):
     """
     Load a font from the assets/fonts directory.
@@ -215,11 +179,18 @@ def load_font(font_name, font_size):
         return pygame.font.Font(font_path, font_size)
     except pygame.error:
         # Return "Roboto" font if specified font is not found
-        return pygame.font.SysFont("Roboto", font_size)
+        return pygame.font.SysFont(SECONDARY_FONT, font_size)
 
 
 def draw_text(
-    text, font_size, color, position, win, h_align="left", v_align="top", font="ROBOTO"
+    text,
+    font_size,
+    color,
+    position,
+    win,
+    h_align="left",
+    v_align="top",
+    font=SECONDARY_FONT,
 ):
     """
     Draw text on the window with support for horizontal and vertical alignment.
@@ -246,7 +217,7 @@ def draw_text(
 
 def draw_rect_with_text(
     text=None,
-    font="MabryPro-Regular",
+    font=PRIMARY_FONT,
     font_size=None,
     rect_position=None,
     rect_width=None,
@@ -254,7 +225,7 @@ def draw_rect_with_text(
     color=None,
     win=None,
     border_width=0,
-    border_color=(0, 0, 0),
+    border_color=TERTIARY_COLOR,
     h_align="left",
     v_align="center",
     padding_x=0,
@@ -271,8 +242,8 @@ def draw_rect_with_text(
         rect_width (int, optional): The width of the rectangle (default is None).
         rect_height (int, optional): The height of the rectangle (default is None).
         color (tuple, optional): The color of the rectangle (default is None).
-        win (pygame.Surface, optional): The window surface to draw on (default is None).
-        border_width (int, optional): The width of the rectangle border (default is 0).
+        win (pygame.Surface): The window surface to draw on (default is None).
+        border_width (int): The width of the rectangle border (default is 0).
         border_color (tuple, optional): The color of the rectangle border (optional, default is black).
         h_align (str, optional): Horizontal alignment of the text within the rectangle ('left', 'center', or 'right') (default is "left").
         v_align (str, optional): Vertical alignment of the text within the rectangle ('top', 'center', or 'bottom') (default is "top").
@@ -304,20 +275,7 @@ def draw_rect_with_text(
         rect = pygame.Rect(rect_position, (rect_width, rect_height))
         pygame.draw.rect(win, color, rect)
 
-    # Calculate position for the text
-
     if text:
-        text_x = rect_position[0] + padding_x
-        text_y = rect_position[1] + padding_y
-        if h_align == "center":
-            text_x += (rect_width - 2 * padding_x) / 2
-        elif h_align == "right":
-            text_x += rect_width - 2 * padding_x
-
-        if v_align == "center":
-            text_y += (rect_height - 2 * padding_y) / 2 - font_size / 2
-        elif v_align == "bottom":
-            text_y += rect_height - 2 * padding_y - font_size
         # Draw text if text and font are provided
         # Calculate position for the text
         text_x = rect_position[0] + padding_x
@@ -336,7 +294,7 @@ def draw_rect_with_text(
         draw_text(
             text,
             font_size,
-            (0, 0, 0),  # Assuming text color is black, change as needed
+            TERTIARY_COLOR,
             (text_x, text_y),
             win,
             font=font,

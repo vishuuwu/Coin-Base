@@ -5,9 +5,8 @@ from game_config import (
     PLAYER_LIMIT_RIGHT,
     PLAYER_LIMIT_DOWN,
     PLAYER_LIMIT_TOP,
+    PLAYER_VELOCITY, 
 )
-
-PLAYER_VELOCITY = 5
 
 
 class Player:
@@ -39,26 +38,61 @@ class Player:
         self.vel = PLAYER_VELOCITY
 
     def move(self):
-        """Move the player based on key inputs."""
+        """
+        Move the player based on key inputs.
+
+        Controls:
+            - Left Arrow: Move left.
+            - Right Arrow: Move right.
+            - Up Arrow: Move up.
+            - Down Arrow: Move down.
+        """
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT] and self.x > (PLAYER_LIMIT_LEFT + 2):
+
+        if keys[pygame.K_LEFT] and self.x > PLAYER_LIMIT_LEFT:
             self.x -= self.vel
-        if keys[pygame.K_RIGHT] and self.x < (PLAYER_LIMIT_RIGHT - self.height -2):
+            if self.x < PLAYER_LIMIT_LEFT:
+                self.x = PLAYER_LIMIT_LEFT
+
+        if keys[pygame.K_RIGHT] and self.x < PLAYER_LIMIT_RIGHT - self.width:
             self.x += self.vel
-        if keys[pygame.K_UP] and self.y > (PLAYER_LIMIT_TOP + 2):
+            if self.x > PLAYER_LIMIT_RIGHT - self.width:
+                self.x = PLAYER_LIMIT_RIGHT - self.width
+
+        if keys[pygame.K_UP] and self.y > PLAYER_LIMIT_TOP:
             self.y -= self.vel
-        if keys[pygame.K_DOWN] and self.y < (PLAYER_LIMIT_DOWN - self.height - 2):
+            if self.y < PLAYER_LIMIT_TOP:
+                self.y = PLAYER_LIMIT_TOP
+
+        if keys[pygame.K_DOWN] and self.y < PLAYER_LIMIT_DOWN - self.height:
             self.y += self.vel
+            if self.y > PLAYER_LIMIT_DOWN - self.height:
+                self.y = PLAYER_LIMIT_DOWN - self.height
+
         self.update()
+
 
     def update(self):
         """Update the player's rectangle."""
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def update_score(self, multiplier=1):
-        """Update the player's score."""
+        """
+        Update the player's score.
+
+        Args:
+            multiplier (int, optional): The multiplier to apply to the score (default is 1).
+        """
         self.score += 1 * multiplier
-        # print(self.score)
+
+    def draw(self, win):
+        """
+        Draw the player on the window.
+
+        Args:
+            win (pygame.Surface): The window surface to draw on.
+        """
+        pygame.draw.rect(win, self.color, self.rect)
 
     def get_player_details(self):
         """

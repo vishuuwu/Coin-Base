@@ -5,13 +5,12 @@ import pickle
 import random
 import time
 from player import Player
+from coin import generate_coin
 from game_config import (
     get_random_pos,
     get_random_character,
-    generate_coin,
     PLAYER_WIDTH,
     PLAYER_HEIGHT,
-    COIN_RADIUS,
     MAX_COINS,
     MIN_GENERATE_INTERVAL,
     MAX_GENERATE_INTERVAL,
@@ -81,9 +80,9 @@ def grab_coin(player):
 
     try:
         coins_to_remove = []  # Store indices of coins to be removed
-        for index, (coin_pos, coin_multiplier) in enumerate(COINS):
-            coin_center = coin_pos
-            coin_radius = COIN_RADIUS * coin_multiplier
+        for index, coin in enumerate(COINS):
+            coin_center = (coin.center_x, coin.center_y)
+            coin_radius = coin.radius
 
             # Calculate the squared distance between the player and the coin
             dx = coin_center[0] - player_center[0]
@@ -95,7 +94,7 @@ def grab_coin(player):
 
             # Check if the squared distance is less than or equal to the squared sum of radii
             if distance_squared <= sum_of_radii_squared:
-                multiplier = coin_multiplier
+                multiplier = coin.multiplier
                 coins_to_remove.append(index)  # Add index of coin to removal list
 
         # Remove grabbed coins from COINS (in reverse order to avoid index shifting)

@@ -1,40 +1,45 @@
 import time
 import pygame
+import math
 from network import Network
 from game_config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     FPS,
     SCREEN_COLOR,
-    ACCENT_PINK,
-    ACCENT_YELLOW,
+    SECONDARY_COLOR,
+    PRIMARY_COLOR,
+    PRIMARY_FONT,
     HEADER_HEIGHT,
     FOOTER_HEIGHT,
     SCORECARD_HEIGHT,
     SCORECARD_WIDTH,
+    BORDER_WIDTH,
+    TITLE_TEXT_SIZE,
+    SUB_TITLE_TEXT_SIZE,
+    BODY_TEXT_SIZE
 )
-from draw import (
-    draw_rect_with_text,
-    draw_coin,
-    draw_character,
-)
-
+from draw import draw_rect_with_text
 
 DRAW_GUI = True
-BORDER_WIDTH = 1
-
 footer_credits = ["VISHAL", "", "KASHYAP"]
 
 
 def draw_background(win):
+    """
+    Draw the background including header, scoreboard, and footer.
+
+    Args:
+        win (pygame.Surface): The window surface to draw on.
+    """
 
     win.fill(SCREEN_COLOR)
 
-    # header
+    # Header
     draw_rect_with_text(
         text="COIN - BASE",
-        font="MabryPro-Regular",
-        font_size=48,
+        font=PRIMARY_FONT,
+        font_size=TITLE_TEXT_SIZE,
         rect_position=(0, 0),
         rect_width=SCREEN_WIDTH,
         rect_height=HEADER_HEIGHT,
@@ -56,7 +61,8 @@ def draw_background(win):
 
     draw_rect_with_text(
         text="scoreboard",
-        font_size=18,
+        font=PRIMARY_FONT,
+        font_size=SUB_TITLE_TEXT_SIZE,
         rect_position=(0, 0),
         rect_width=SCORECARD_WIDTH,
         rect_height=HEADER_HEIGHT,
@@ -66,18 +72,19 @@ def draw_background(win):
         padding_x=16,
     )
 
-    # footer
+    # Footer
     for i, credit in enumerate(footer_credits):
         draw_rect_with_text(
             text=credit,
-            font_size=14,
+            font=PRIMARY_FONT,
+            font_size=BODY_TEXT_SIZE,
             rect_position=(
-                i * (SCREEN_WIDTH / len(footer_credits)),
+                i * (math.ceil(SCREEN_WIDTH / len(footer_credits))),
                 SCREEN_HEIGHT - FOOTER_HEIGHT,
             ),
             rect_width=SCREEN_WIDTH / len(footer_credits),
             rect_height=FOOTER_HEIGHT,
-            color=ACCENT_PINK if i % 2 == 0 else ACCENT_YELLOW,
+            color=SECONDARY_COLOR if i % 2 == 0 else PRIMARY_COLOR,
             win=win,
             border_width=BORDER_WIDTH,
             h_align="center",
@@ -85,6 +92,15 @@ def draw_background(win):
 
 
 def draw_scoreboard(player, opponents, win):
+    """
+    Draw the scoreboard displaying player and opponents' scores.
+
+    Args:
+        player (Player): The player object.
+        opponents (dict): Dictionary containing opponent players.
+        win (pygame.Surface): The window surface to draw on.
+    """
+
     draw_rect_with_text(
         rect_position=(0, HEADER_HEIGHT + BORDER_WIDTH),
         rect_width=SCORECARD_WIDTH,
@@ -103,14 +119,14 @@ def draw_scoreboard(player, opponents, win):
 
         draw_rect_with_text(
             text=name + "           " + str(round(score, 2)),
-            font_size=14,
+            font_size=BODY_TEXT_SIZE,
             rect_position=(
                 0,
                 HEADER_HEIGHT + BORDER_WIDTH + i * SCORECARD_HEIGHT,
             ),
             rect_width=SCORECARD_WIDTH,
             rect_height=SCORECARD_HEIGHT,
-            color=ACCENT_YELLOW if name == player.name else ACCENT_PINK,
+            color=PRIMARY_COLOR if name == player.name else SECONDARY_COLOR,
             win=win,
             border_width=BORDER_WIDTH,
             padding_x=18,
@@ -119,13 +135,13 @@ def draw_scoreboard(player, opponents, win):
 
 def redraw_window(player, opponents, coins, win):
     """
-    Redraw the window with a white background and the players.
+    Redraw the game window with updated player, opponents, and coins.
 
     Args:
-        win (pygame.Surface): The window surface to draw on.
-        player (Player): The player object to draw.
+        player (Player): The player object.
         opponents (dict): Dictionary containing opponent players.
         coins (list): List containing coin tuples (position, multiplier).
+        win (pygame.Surface): The window surface to draw on.
     """
 
     draw_rect_with_text(
@@ -137,11 +153,11 @@ def redraw_window(player, opponents, coins, win):
     )
     draw_scoreboard(player, opponents, win)
     for coin in coins:
-        draw_coin(coin, win)
+        coin.draw(win)
     for opp_id, opp in opponents.items():
-        draw_character(opp, win)
+        opp.draw(win)
 
-    draw_character(player, win)
+    player.draw(win)
 
     pygame.display.update()
 
@@ -159,7 +175,7 @@ def main():
     running = True
     n = Network()
     player = n.getPlayer()
-    print(player.get_player_details())
+    # print(player.get_player_details())
     print(player.name)
     clock = pygame.time.Clock()
     while running:
@@ -171,11 +187,9 @@ def main():
             player.update_score(multiplier)
         opponents = response["opponents"]
         winner = response["winner"]
-        # print("hi", winner)
         if winner:
             coins = {}
             break
-
         else:
             coins = response["coins"]
         running = handle_events()
@@ -187,12 +201,10 @@ def main():
         redraw_window(player, opponents, coins, win)
 
     # Draw the rectangle and winner text
-
     if winner:
-
         draw_rect_with_text(
             text="Player " + winner + " WON!!!",
-            font_size=18,
+            font_size=SUB_TITLE_TEXT_SIZE,
             rect_position=(
                 SCORECARD_WIDTH + BORDER_WIDTH,
                 HEADER_HEIGHT + BORDER_WIDTH,
@@ -202,7 +214,7 @@ def main():
             - HEADER_HEIGHT
             - FOOTER_HEIGHT
             - 2 * BORDER_WIDTH,
-            color=ACCENT_YELLOW if winner == player.name else ACCENT_PINK,
+            color=PRIMARY_COLOR if winner == player.name else SECONDARY_COLOR,
             win=win,
             border_width=BORDER_WIDTH,
             h_align="center",
@@ -217,5 +229,5 @@ if __name__ == "__main__":
     pygame.init()
     win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Client")
-    draw_background(win)  # optimise this shit
+    draw_background(win)
     main()
