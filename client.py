@@ -22,7 +22,8 @@ from game_config import (
 from draw import draw_rect_with_text
 
 DRAW_GUI = True
-footer_credits = ["VISHAL", "", "KASHYAP"]
+footer_credits = ["2024", "", "@vishuuwu"]
+
 
 
 def draw_background(win):
@@ -71,9 +72,10 @@ def draw_background(win):
         border_width=BORDER_WIDTH,
         padding_x=16,
     )
-
+    align = "left"
     # Footer
     for i, credit in enumerate(footer_credits):
+        if not credit: align= "right" 
         draw_rect_with_text(
             text=credit,
             font=PRIMARY_FONT,
@@ -87,7 +89,8 @@ def draw_background(win):
             color=SECONDARY_COLOR if i % 2 == 0 else PRIMARY_COLOR,
             win=win,
             border_width=BORDER_WIDTH,
-            h_align="center",
+            h_align=align,
+            padding_x= 16
         )
 
 
@@ -101,19 +104,21 @@ def draw_scoreboard(player, opponents, win):
         win (pygame.Surface): The window surface to draw on.
     """
 
-    draw_rect_with_text(
-        rect_position=(0, HEADER_HEIGHT + BORDER_WIDTH),
-        rect_width=SCORECARD_WIDTH,
-        rect_height=SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2 * BORDER_WIDTH,
-        color=SCREEN_COLOR,
-        win=win,
-    )
+
     # Combine player and opponents' scores and sort them by score
     all_scores = [(player.name, player.score)] + [
         (opp.name, opp.score) for opp in opponents.values()
     ]
     all_scores.sort(key=lambda x: x[1], reverse=True)
 
+    draw_rect_with_text(
+        rect_position=(0, HEADER_HEIGHT + BORDER_WIDTH),
+        rect_width=SCORECARD_WIDTH,
+        rect_height=len(all_scores)*SCORECARD_HEIGHT,
+        color=SCREEN_COLOR,
+        win=win,
+        draw_rect=True
+    )
     # Draw scoreboard items for each player and opponent
     for i, (name, score) in enumerate(all_scores):
 
@@ -150,6 +155,7 @@ def redraw_window(player, opponents, coins, win):
         rect_height=SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2 * BORDER_WIDTH,
         color=SCREEN_COLOR,
         win=win,
+        draw_rect=True
     )
     draw_scoreboard(player, opponents, win)
     for coin in coins:
@@ -164,9 +170,18 @@ def redraw_window(player, opponents, coins, win):
 
 def handle_events():
     """Handle events such as quitting the game."""
+    # global SCREEN_WIDTH, SCREEN_HEIGHT, SCORECARD_WIDTH
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
+        # elif event.type == pygame.VIDEORESIZE:
+        #     # Update the screen dimensions if the window is resized
+        #     SCREEN_WIDTH, SCREEN_HEIGHT = event.size
+        #     # SCORECARD_WIDTH= SCREEN_WIDTH //6
+        #     win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
+        #     draw_background(win)
+
+        
     return True
 
 
@@ -227,6 +242,7 @@ def main():
 
 if __name__ == "__main__":
     pygame.init()
+    # win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
     win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Client")
     draw_background(win)

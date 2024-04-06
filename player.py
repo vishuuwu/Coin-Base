@@ -5,7 +5,12 @@ from game_config import (
     PLAYER_LIMIT_RIGHT,
     PLAYER_LIMIT_DOWN,
     PLAYER_LIMIT_TOP,
-    PLAYER_VELOCITY, 
+    PLAYER_VELOCITY,
+    PLAYER_SHADOW,
+    PLAYER_BORDER_RADIUS,
+    TERTIARY_COLOR,
+    BORDER_WIDTH,
+    DRAW_GUI
 )
 
 
@@ -34,6 +39,15 @@ class Player:
         self.character = character_color
         self.color = get_random_color()
         self.rect = pygame.Rect(x, y, width, height)
+        self.shadowRect = pygame.Rect(
+            x + PLAYER_SHADOW, y + PLAYER_SHADOW, width, height
+        )
+        self.borderRect = pygame.Rect(
+            x - BORDER_WIDTH,
+            y - BORDER_WIDTH,
+            width + 2 * BORDER_WIDTH,
+            height + 2 * BORDER_WIDTH,
+        )
         self.direction = "left"
         self.vel = PLAYER_VELOCITY
 
@@ -71,10 +85,19 @@ class Player:
 
         self.update()
 
-
     def update(self):
         """Update the player's rectangle."""
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        if DRAW_GUI:
+            self.shadowRect = pygame.Rect(
+                self.x + PLAYER_SHADOW, self.y + PLAYER_SHADOW, self.width, self.height
+            )
+            self.borderRect = pygame.Rect(
+                self.x - BORDER_WIDTH,
+                self.y - BORDER_WIDTH,
+                self.width + 2 * BORDER_WIDTH,
+                self.height + 2 * BORDER_WIDTH,
+            )
 
     def update_score(self, multiplier=1):
         """
@@ -85,14 +108,22 @@ class Player:
         """
         self.score += 1 * multiplier
 
-    def draw(self, win):
+    def draw(self, win: pygame.Surface) -> None:
         """
         Draw the player on the window.
 
         Args:
             win (pygame.Surface): The window surface to draw on.
         """
-        pygame.draw.rect(win, self.color, self.rect)
+        if DRAW_GUI:
+            pygame.draw.rect(
+                win, TERTIARY_COLOR, self.shadowRect, border_radius=PLAYER_BORDER_RADIUS
+            )
+            pygame.draw.rect(
+                win, TERTIARY_COLOR, self.borderRect, border_radius=PLAYER_BORDER_RADIUS
+            )
+
+        pygame.draw.rect(win, self.color, self.rect, border_radius=PLAYER_BORDER_RADIUS)
 
     def get_player_details(self):
         """

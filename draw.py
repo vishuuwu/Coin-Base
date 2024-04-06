@@ -1,7 +1,7 @@
 from os import listdir
 import pygame
 from os.path import join, isfile
-from game_config import PRIMARY_FONT, SECONDARY_FONT, TERTIARY_COLOR
+from game_config import PRIMARY_FONT, SECONDARY_FONT, TERTIARY_COLOR, DRAW_GUI
 
 
 def flip_sprite(sprite):
@@ -230,6 +230,7 @@ def draw_rect_with_text(
     v_align="center",
     padding_x=0,
     padding_y=0,
+    draw_rect=DRAW_GUI,
 ):
     """
     Draw a rectangle with optional text inside, supporting alignment and padding.
@@ -251,29 +252,29 @@ def draw_rect_with_text(
         padding_y (int, optional): Padding on the y-axis for the text (default is 0).
     """
     # Draw rectangle with border
+    if draw_rect:
+        if border_width:
+            # Update position and size for border
+            border_x, border_y = rect_position
+            border_width_scaled = 2 * border_width
+            border_x -= border_width
+            border_y -= border_width
+            width, height = rect_width, rect_height
+            width += border_width_scaled
+            height += border_width_scaled
+            rect = pygame.Rect(border_x, border_y, width, height)
 
-    if border_width:
-        # Update position and size for border
-        border_x, border_y = rect_position
-        border_width_scaled = 2 * border_width
-        border_x -= border_width
-        border_y -= border_width
-        width, height = rect_width, rect_height
-        width += border_width_scaled
-        height += border_width_scaled
-        rect = pygame.Rect(border_x, border_y, width, height)
+            # Adjust horizontal and vertical positions
+            horizontal_position, vertical_position = rect_position
+            horizontal_position -= border_width
+            vertical_position -= border_width
 
-        # Adjust horizontal and vertical positions
-        horizontal_position, vertical_position = rect_position
-        horizontal_position -= border_width
-        vertical_position -= border_width
-
-        pygame.draw.rect(win, border_color, rect, border_width)
-        inner_rect = rect.inflate(-border_width_scaled, -border_width_scaled)
-        pygame.draw.rect(win, color, inner_rect)
-    else:
-        rect = pygame.Rect(rect_position, (rect_width, rect_height))
-        pygame.draw.rect(win, color, rect)
+            pygame.draw.rect(win, border_color, rect, border_width)
+            inner_rect = rect.inflate(-border_width_scaled, -border_width_scaled)
+            pygame.draw.rect(win, color, inner_rect)
+        else:
+            rect = pygame.Rect(rect_position, (rect_width, rect_height))
+            pygame.draw.rect(win, color, rect)
 
     if text:
         # Draw text if text and font are provided
